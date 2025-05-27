@@ -1,0 +1,65 @@
+{
+  "name": "codesync-diagram",
+  "displayName": "CodeSync Diagram - Architecture View",
+  "description": "Analyze and visualize your project architecture with interactive diagrams",
+  "version": "1.1.2",
+  "publisher": "codesync",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization"
+  ],
+  "keywords": [
+    "architecture",
+    "diagram",
+    "visualization",
+    "analysis",
+    "cursor"
+  ],
+  "main": "./out/extension.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codesync/architecture-view"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "codesync.analyzeProject",
+        "title": "프로젝트 분석",
+        "category": "CodeSync"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "codesync.analyzeProject",
+          "group": "navigation@99"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "codesync.analyzeProject",
+          "group": "navigation@99"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "webpack --mode production",
+    "watch": "webpack --mode development --watch",
+    "package": "npm version patch && vsce package --allow-missing-repository",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "@types/vscode": "^1.74.0",
+    "@vscode/vsce": "^3.4.2",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.8.3",
+    "webpack": "^5.99.9",
+    "webpack-cli": "^6.0.1"
+  }
+}

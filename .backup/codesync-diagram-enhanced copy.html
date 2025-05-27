@@ -1,0 +1,2437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeSync Diagram - Enhanced Interactive Architecture</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #0d1117;
+            color: #c9d1d9;
+            overflow: hidden;
+        }
+        
+        /* Header */
+        .header {
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            background: rgba(22, 27, 34, 0.9);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            color: #f0f6fc;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .header h1::before {
+            content: '📊';
+            font-size: 24px;
+        }
+        
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            gap: 8px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 4px;
+        }
+        
+        .control-btn {
+            background: transparent;
+            border: none;
+            color: #8b949e;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .control-btn:hover {
+            background: #1f2428;
+            color: #f0f6fc;
+        }
+        
+        .control-btn.active {
+            background: #1f6feb;
+            color: white;
+        }
+        
+        .zoom-level {
+            padding: 6px 12px;
+            color: #f0f6fc;
+            font-size: 14px;
+            min-width: 60px;
+            text-align: center;
+            background: #0d1117;
+            border-radius: 4px;
+        }
+        
+        /* Main Container */
+        .main-container {
+            position: fixed;
+            top: 65px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: #0d1117;
+            border-right: 1px solid #30363d;
+            overflow-y: auto;
+            padding: 16px;
+            transition: transform 0.3s;
+        }
+        
+        .sidebar.collapsed {
+            transform: translateX(-300px);
+        }
+        
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+        
+        .sidebar-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f0f6fc;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .sidebar-content {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #8b949e;
+        }
+        
+        .file-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            margin: 4px 0;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: #58a6ff;
+        }
+        
+        .file-link:hover {
+            background: #1f2428;
+            border-color: #58a6ff;
+            transform: translateX(4px);
+        }
+        
+        .file-icon {
+            font-size: 16px;
+        }
+        
+        /* Diagram Container */
+        .diagram-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #0d1117;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(31, 111, 235, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(56, 166, 255, 0.1) 0%, transparent 50%);
+        }
+        
+        .diagram-viewport {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+        
+        .diagram-viewport.dragging {
+            cursor: grabbing;
+        }
+        
+        .diagram-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            transform-origin: center;
+            transition: transform 0.1s;
+            width: 1600px;
+            padding: 40px;
+        }
+        
+        /* Layers */
+        .layer {
+            margin-bottom: 30px;
+            background: rgba(22, 27, 34, 0.8);
+            border: 2px solid;
+            border-radius: 12px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .layer:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+        
+        .layer-vscode {
+            border-color: #ff6b6b;
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(22, 27, 34, 0.8) 100%);
+        }
+        
+        .layer-core {
+            border-color: #4dabf7;
+            background: linear-gradient(135deg, rgba(77, 171, 247, 0.1) 0%, rgba(22, 27, 34, 0.8) 100%);
+        }
+        
+        .layer-analysis {
+            border-color: #da77f2;
+            background: linear-gradient(135deg, rgba(218, 119, 242, 0.1) 0%, rgba(22, 27, 34, 0.8) 100%);
+        }
+        
+        .layer-rendering {
+            border-color: #51cf66;
+            background: linear-gradient(135deg, rgba(81, 207, 102, 0.1) 0%, rgba(22, 27, 34, 0.8) 100%);
+        }
+        
+        .layer-utility {
+            border-color: #ff922b;
+            background: linear-gradient(135deg, rgba(255, 146, 43, 0.1) 0%, rgba(22, 27, 34, 0.8) 100%);
+        }
+        
+        .layer-title {
+            position: absolute;
+            top: -14px;
+            left: 24px;
+            background: #0d1117;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #f0f6fc;
+            border: 2px solid inherit;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Components Grid */
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        
+        /* Component Card */
+        .component {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .component::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, currentColor, transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s;
+        }
+        
+        .component:hover::before {
+            transform: translateX(100%);
+        }
+        
+        .component:hover {
+            background: #1f2428;
+            border-color: #58a6ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .component.selected {
+            border-color: #f78166;
+            background: rgba(247, 129, 102, 0.1);
+        }
+        
+        .component-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        
+        .component-title {
+            font-weight: 600;
+            font-size: 15px;
+            color: #f0f6fc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .component-badge {
+            background: #1f6feb;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .component-content {
+            font-size: 12px;
+            color: #8b949e;
+            line-height: 1.5;
+        }
+        
+        .component-section {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #21262d;
+        }
+        
+        .component-section:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .component-section-title {
+            font-weight: 600;
+            color: #58a6ff;
+            margin-bottom: 6px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .component-item {
+            margin: 2px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #e6edf3;
+        }
+        
+        .component-var {
+            color: #79c0ff;
+        }
+        
+        .component-type {
+            color: #7ee787;
+        }
+        
+        /* Special Component Styles */
+        .component.entry-point::before {
+            background-color: #ff6b6b;
+        }
+        
+        .component.service::before {
+            background-color: #4dabf7;
+        }
+        
+        .component.webview::before {
+            background-color: #51cf66;
+        }
+        
+        /* Connection Lines */
+        .connections-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        .connection-path {
+            stroke: #30363d;
+            stroke-width: 2;
+            fill: none;
+            opacity: 0.6;
+            transition: all 0.3s;
+        }
+        
+        .connection-path:hover {
+            stroke: #58a6ff;
+            stroke-width: 3;
+            opacity: 1;
+        }
+        
+        .connection-path.active {
+            stroke: #f78166;
+            stroke-width: 3;
+            opacity: 1;
+            filter: drop-shadow(0 0 6px rgba(247, 129, 102, 0.6));
+        }
+        
+        .connection-label {
+            fill: #8b949e;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        /* Mini Map */
+        .minimap {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            background: rgba(22, 27, 34, 0.9);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 8px;
+            z-index: 100;
+        }
+        
+        .minimap-viewport {
+            border: 2px solid #58a6ff;
+            background: rgba(88, 166, 255, 0.1);
+            position: absolute;
+            cursor: move;
+        }
+        
+        /* Info Tooltip */
+        .tooltip {
+            position: absolute;
+            background: #1f2428;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 12px;
+            color: #e6edf3;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            max-width: 300px;
+            display: none;
+        }
+        
+        .tooltip.show {
+            display: block;
+        }
+        
+        .tooltip-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #58a6ff;
+        }
+        
+        .tooltip-content {
+            line-height: 1.5;
+        }
+        
+        /* Search Box */
+        .search-box {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: none;
+        }
+        
+        .search-box.show {
+            display: block;
+        }
+        
+        .search-input {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 8px 16px;
+            color: #f0f6fc;
+            font-size: 14px;
+            width: 300px;
+            outline: none;
+        }
+        
+        .search-input:focus {
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f6feb;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 2000;
+        }
+        
+        .notification.show {
+            opacity: 1;
+        }
+        
+        /* Animation for connections */
+        @keyframes flow {
+            0% {
+                stroke-dashoffset: 0;
+            }
+            100% {
+                stroke-dashoffset: 10;
+            }
+        }
+        
+        .connection-path.animated {
+            stroke-dasharray: 5 5;
+            animation: flow 0.5s linear infinite;
+        }
+        
+        /* Advanced Controls Panel */
+        #advancedControls {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(22, 27, 34, 0.95);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 16px;
+            width: 280px;
+            max-height: 600px;
+            overflow-y: auto;
+            z-index: 500;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+        
+        #advancedControls.show {
+            display: block;
+        }
+        
+        .control-section {
+            margin-bottom: 20px;
+        }
+        
+        .control-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f0f6fc;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-group {
+            margin-bottom: 8px;
+        }
+        
+        .filter-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .filter-checkbox:hover {
+            background: #1f2428;
+        }
+        
+        .filter-checkbox input {
+            cursor: pointer;
+        }
+        
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 8px;
+            font-size: 12px;
+            color: #8b949e;
+        }
+        
+        .metric-value {
+            color: #58a6ff;
+            font-weight: 600;
+        }
+        
+        .history-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .history-btn {
+            flex: 1;
+            padding: 6px 12px;
+            background: #1f2428;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            color: #8b949e;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+        
+        .history-btn:hover:not(:disabled) {
+            background: #30363d;
+            color: #f0f6fc;
+        }
+        
+        .history-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .complexity-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: 4px;
+        }
+        
+        .complexity-low { background: #51cf66; }
+        .complexity-medium { background: #ff922b; }
+        .complexity-high { background: #ff6b6b; }
+        
+        .analysis-btn {
+            width: 100%;
+            padding: 8px 12px;
+            background: #1f2428;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            color: #8b949e;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .analysis-btn:hover {
+            background: #30363d;
+            color: #f0f6fc;
+            border-color: #58a6ff;
+        }
+        
+        /* Status Bar */
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: #161b22;
+            border-top: 1px solid #30363d;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 12px;
+            color: #8b949e;
+            z-index: 1000;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 12px;
+            border-right: 1px solid #30363d;
+        }
+        
+        .status-item:last-child {
+            border-right: none;
+            margin-left: auto;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                position: absolute;
+                z-index: 999;
+                height: 100%;
+            }
+            
+            .components-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            #advancedControls {
+                width: calc(100% - 40px);
+                right: 20px;
+                left: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>CodeSync Diagram - Enhanced Architecture View</h1>
+        <div class="controls">
+            <div class="control-group">
+                <button class="control-btn" id="toggleSidebar" title="Toggle Sidebar (S)">
+                    <span>📋</span> Sidebar
+                </button>
+                <button class="control-btn" id="searchBtn" title="Search (Ctrl+F)">
+                    <span>🔍</span> Search
+                </button>
+            </div>
+            
+            <div class="control-group">
+                <button class="control-btn" id="zoomOut" title="Zoom Out (-)">
+                    <span>➖</span>
+                </button>
+                <div class="zoom-level" id="zoomLevel">100%</div>
+                <button class="control-btn" id="zoomIn" title="Zoom In (+)">
+                    <span>➕</span>
+                </button>
+                <button class="control-btn" id="zoomReset" title="Reset Zoom (0)">
+                    <span>🔄</span>
+                </button>
+            </div>
+            
+            <div class="control-group">
+                <button class="control-btn" id="exportBtn" title="Export Diagram">
+                    <span>💾</span> Export
+                </button>
+                <button class="control-btn" id="fullscreenBtn" title="Fullscreen (F11)">
+                    <span>⛶</span>
+                </button>
+                <button class="control-btn" id="advancedToggle" title="Advanced Controls (A)">
+                    <span>⚙️</span> Advanced
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    <span>📁</span> Quick Navigation
+                </div>
+                <div class="sidebar-content">
+                    <div class="file-link" data-file="src/extension.ts">
+                        <span class="file-icon">📄</span>
+                        src/extension.ts
+                    </div>
+                    <div class="file-link" data-file="src/diagram/DiagramService.ts">
+                        <span class="file-icon">📄</span>
+                        src/diagram/DiagramService.ts
+                    </div>
+                    <div class="file-link" data-file="src/webview/MermaidWebviewProvider.ts">
+                        <span class="file-icon">📄</span>
+                        src/webview/MermaidWebviewProvider.ts
+                    </div>
+                    <div class="file-link" data-file="src/providers/CodeElementHoverProvider.ts">
+                        <span class="file-icon">📄</span>
+                        src/providers/CodeElementHoverProvider.ts
+                    </div>
+                    <div class="file-link" data-file="src/analyzer/CodeElementAnalyzer.ts">
+                        <span class="file-icon">📄</span>
+                        src/analyzer/CodeElementAnalyzer.ts
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    <span>🔌</span> Active Connections
+                </div>
+                <div class="sidebar-content" id="activeConnections">
+                    Click on a component to see its connections
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    <span>📊</span> Statistics
+                </div>
+                <div class="sidebar-content">
+                    <div>Total Components: <strong>25</strong></div>
+                    <div>Total Connections: <strong>18</strong></div>
+                    <div>Layers: <strong>5</strong></div>
+                    <div>Language Support: <strong>9</strong></div>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    <span>⌨️</span> Keyboard Shortcuts
+                </div>
+                <div class="sidebar-content">
+                    <div><kbd>+</kbd> / <kbd>-</kbd> : Zoom In/Out</div>
+                    <div><kbd>0</kbd> : Reset Zoom</div>
+                    <div><kbd>S</kbd> : Toggle Sidebar</div>
+                    <div><kbd>A</kbd> : Advanced Panel</div>
+                    <div><kbd>Ctrl+F</kbd> : Search</div>
+                    <div><kbd>F11</kbd> : Fullscreen</div>
+                    <div><kbd>Click+Drag</kbd> : Pan</div>
+                    <div><kbd>Scroll</kbd> : Zoom</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="diagram-container">
+            <div class="search-box" id="searchBox">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search components, functions, variables...">
+            </div>
+            
+            <div class="diagram-viewport" id="viewport">
+                <div class="diagram-content" id="diagramContent">
+                    <svg class="connections-svg" id="connectionsSvg"></svg>
+                    
+                    <!-- VS Code Extension API Layer -->
+                    <div class="layer layer-vscode" data-layer="vscode">
+                        <span class="layer-title">VS Code Extension API Layer</span>
+                        <div class="components-grid">
+                            <div class="component entry-point" data-id="extension" data-file="src/extension.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🚀</span> extension.ts
+                                    </div>
+                                    <div class="component-badge">Entry</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Functions</div>
+                                        <div class="component-item">• activate(<span class="component-var">context</span>: <span class="component-type">ExtensionContext</span>)</div>
+                                        <div class="component-item">• deactivate(): <span class="component-type">void</span></div>
+                                        <div class="component-item">• analyzeCode(<span class="component-var">content</span>, <span class="component-var">language</span>)</div>
+                                        <div class="component-item">• convertAnalysisToDiagramData()</div>
+                                    </div>
+                                    <div class="component-section">
+                                        <div class="component-section-title">Variables</div>
+                                        <div class="component-item">• <span class="component-var">statusBarItem</span>: <span class="component-type">StatusBarItem</span></div>
+                                        <div class="component-item">• <span class="component-var">currentVersion</span>: <span class="component-type">string</span></div>
+                                        <div class="component-item">• <span class="component-var">mermaidProvider</span>: <span class="component-type">MermaidWebviewProvider</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="commands" data-file="src/commands/index.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>⚡</span> Command Registration
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Commands</div>
+                                        <div class="component-item">• codeAnalyzer.start</div>
+                                        <div class="component-item">• codesync.showBasicDiagram</div>
+                                        <div class="component-item">• codesync.diagram.class</div>
+                                        <div class="component-item">• codesync.diagram.sequence</div>
+                                        <div class="component-item">• codesync.export.[format]</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="webviewProvider" data-file="src/webview/WebviewProvider.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🖼️</span> Webview Provider
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Methods</div>
+                                        <div class="component-item">• createWebviewPanel(<span class="component-var">context</span>)</div>
+                                        <div class="component-item">• postMessage(<span class="component-var">message</span>: <span class="component-type">any</span>)</div>
+                                        <div class="component-item">• receiveMessage(<span class="component-var">handler</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="providers" data-file="src/providers/index.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🔧</span> Language Providers
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Providers</div>
+                                        <div class="component-item">• CodeElementHoverProvider</div>
+                                        <div class="component-item">• CodeElementAnalyzer</div>
+                                        <div class="component-item">• CodeVisualizationProvider</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="fileWatcher" data-file="src/utils/FileWatcher.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>👁️</span> File System Watcher
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Events</div>
+                                        <div class="component-item">• onDidChange(<span class="component-var">uri</span>: <span class="component-type">Uri</span>)</div>
+                                        <div class="component-item">• onDidCreate(<span class="component-var">uri</span>: <span class="component-type">Uri</span>)</div>
+                                        <div class="component-item">• onDidDelete(<span class="component-var">uri</span>: <span class="component-type">Uri</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Core Services Layer -->
+                    <div class="layer layer-core" data-layer="core">
+                        <span class="layer-title">Core Services Layer</span>
+                        <div class="components-grid">
+                            <div class="component service" data-id="diagramService" data-file="src/services/DiagramService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>📊</span> DiagramService
+                                    </div>
+                                    <div class="component-badge">Service</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Methods</div>
+                                        <div class="component-item">• generateDiagram(<span class="component-var">analysis</span>)</div>
+                                        <div class="component-item">• updateDiagram(<span class="component-var">nodeId</span>, <span class="component-var">data</span>)</div>
+                                        <div class="component-item">• exportDiagram(<span class="component-var">format</span>)</div>
+                                    </div>
+                                    <div class="component-section">
+                                        <div class="component-section-title">State</div>
+                                        <div class="component-item">• <span class="component-var">currentDiagram</span>: <span class="component-type">DiagramData</span></div>
+                                        <div class="component-item">• <span class="component-var">diagramCache</span>: <span class="component-type">Map</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component service" data-id="architectureService" data-file="src/services/ArchitectureDiagramService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🏗️</span> ArchitectureDiagramService
+                                    </div>
+                                    <div class="component-badge">Service</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Methods</div>
+                                        <div class="component-item">• generateProjectArchitecture()</div>
+                                        <div class="component-item">• analyzeProjectStructure()</div>
+                                        <div class="component-item">• createArchitectureNodes()</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component service" data-id="navigationService" data-file="src/navigation/NavigationService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🧭</span> NavigationService
+                                    </div>
+                                    <div class="component-badge">Service</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Functions</div>
+                                        <div class="component-item">• navigateToElement(<span class="component-var">element</span>)</div>
+                                        <div class="component-item">• goToDefinition(<span class="component-var">symbol</span>)</div>
+                                        <div class="component-item">• findReferences(<span class="component-var">symbol</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component service" data-id="exportService" data-file="src/export/ExportService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>💾</span> ExportService
+                                    </div>
+                                    <div class="component-badge">Service</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Exporters</div>
+                                        <div class="component-item">• exportToPNG(<span class="component-var">diagram</span>)</div>
+                                        <div class="component-item">• exportToSVG(<span class="component-var">diagram</span>)</div>
+                                        <div class="component-item">• exportToPDF(<span class="component-var">diagram</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component service" data-id="configService" data-file="src/config/ConfigurationService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>⚙️</span> ConfigurationService
+                                    </div>
+                                    <div class="component-badge">Service</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Methods</div>
+                                        <div class="component-item">• getConfiguration(<span class="component-var">section</span>)</div>
+                                        <div class="component-item">• updateConfiguration(<span class="component-var">key</span>, <span class="component-var">value</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Analysis & Processing Layer -->
+                    <div class="layer layer-analysis" data-layer="analysis">
+                        <span class="layer-title">Analysis & Processing Layer</span>
+                        <div class="components-grid">
+                            <div class="component" data-id="codeParser" data-file="src/parser/CodeParser.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🔍</span> CodeParser
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Parser Methods</div>
+                                        <div class="component-item">• parseTypeScript(<span class="component-var">code</span>: <span class="component-type">string</span>)</div>
+                                        <div class="component-item">• parseJavaScript(<span class="component-var">code</span>: <span class="component-type">string</span>)</div>
+                                        <div class="component-item">• parsePython(<span class="component-var">code</span>: <span class="component-type">string</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="analyzers" data-file="src/analyzer/LanguageAnalyzers.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🧪</span> Language Analyzers
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Analyzers</div>
+                                        <div class="component-item">• TypeScriptAnalyzer</div>
+                                        <div class="component-item">• PythonAnalyzer</div>
+                                        <div class="component-item">• JavaAnalyzer</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="elementExtractor" data-file="src/analyzer/CodeElementExtractor.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🔬</span> CodeElementExtractor
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Extract Methods</div>
+                                        <div class="component-item">• extractClasses(<span class="component-var">ast</span>)</div>
+                                        <div class="component-item">• extractFunctions(<span class="component-var">ast</span>)</div>
+                                        <div class="component-item">• extractInterfaces(<span class="component-var">ast</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="dependencyResolver" data-file="src/analyzer/DependencyResolver.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🔗</span> DependencyResolver
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Resolution</div>
+                                        <div class="component-item">• resolveDependencies(<span class="component-var">elements</span>)</div>
+                                        <div class="component-item">• buildDependencyGraph()</div>
+                                        <div class="component-item">• detectCircularDeps()</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="errorDetection" data-file="src/error-detection/ErrorDetectionService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🚨</span> ErrorDetectionService
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Detection</div>
+                                        <div class="component-item">• detectSyntaxErrors(<span class="component-var">code</span>)</div>
+                                        <div class="component-item">• detectSemanticErrors(<span class="component-var">ast</span>)</div>
+                                        <div class="component-item">• suggestFixes(<span class="component-var">error</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Rendering & UI Layer -->
+                    <div class="layer layer-rendering" data-layer="rendering">
+                        <span class="layer-title">Rendering & UI Layer</span>
+                        <div class="components-grid">
+                            <div class="component webview" data-id="diagramRenderer" data-file="src/renderer/DiagramRenderer.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🎨</span> DiagramRenderer
+                                    </div>
+                                    <div class="component-badge">Webview</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Render Methods</div>
+                                        <div class="component-item">• renderClassDiagram(<span class="component-var">data</span>)</div>
+                                        <div class="component-item">• renderSequenceDiagram(<span class="component-var">data</span>)</div>
+                                        <div class="component-item">• renderFlowchart(<span class="component-var">data</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component webview" data-id="mermaidIntegration" data-file="src/webview/MermaidWebviewProvider.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🧜‍♀️</span> MermaidWebviewProvider
+                                    </div>
+                                    <div class="component-badge">Webview</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Mermaid Methods</div>
+                                        <div class="component-item">• showDiagram(<span class="component-var">data</span>, <span class="component-var">title</span>)</div>
+                                        <div class="component-item">• generateMermaidCode(<span class="component-var">diagram</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component webview" data-id="d3Visualization" data-file="src/visualization/D3Visualization.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>📈</span> D3 Visualization
+                                    </div>
+                                    <div class="component-badge">Webview</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">D3 Functions</div>
+                                        <div class="component-item">• createSVG(<span class="component-var">container</span>)</div>
+                                        <div class="component-item">• updateNodes(<span class="component-var">nodeData</span>)</div>
+                                        <div class="component-item">• handleZoom(<span class="component-var">event</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component webview" data-id="reactComponents" data-file="src/webview/components/index.tsx">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>⚛️</span> React Components
+                                    </div>
+                                    <div class="component-badge">Webview</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Components</div>
+                                        <div class="component-item">• DiagramCanvas</div>
+                                        <div class="component-item">• Toolbar</div>
+                                        <div class="component-item">• ZoomControls</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component webview" data-id="themeManager" data-file="src/theme/ThemeManager.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🎨</span> ThemeManager
+                                    </div>
+                                    <div class="component-badge">Webview</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Theme Methods</div>
+                                        <div class="component-item">• applyTheme(<span class="component-var">themeName</span>)</div>
+                                        <div class="component-item">• getThemeColors()</div>
+                                        <div class="component-item">• syncWithVSCodeTheme()</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Utility & Support Layer -->
+                    <div class="layer layer-utility" data-layer="utility">
+                        <span class="layer-title">Utility & Support Layer</span>
+                        <div class="components-grid">
+                            <div class="component" data-id="fileUtils" data-file="src/utils/FileSystemUtilities.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>📁</span> FileSystemUtilities
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">File Operations</div>
+                                        <div class="component-item">• readFile(<span class="component-var">path</span>): <span class="component-type">Promise&lt;string&gt;</span></div>
+                                        <div class="component-item">• writeFile(<span class="component-var">path</span>, <span class="component-var">content</span>)</div>
+                                        <div class="component-item">• watchFiles(<span class="component-var">pattern</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="logging" data-file="src/logging/LoggingService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>📝</span> LoggingService
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Log Methods</div>
+                                        <div class="component-item">• logInfo(<span class="component-var">message</span>, <span class="component-var">context</span>)</div>
+                                        <div class="component-item">• logError(<span class="component-var">error</span>, <span class="component-var">stack</span>)</div>
+                                        <div class="component-item">• logDebug(<span class="component-var">data</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="i18n" data-file="src/i18n/I18nService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🌍</span> I18n Service
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">i18n Methods</div>
+                                        <div class="component-item">• translate(<span class="component-var">key</span>, <span class="component-var">params</span>)</div>
+                                        <div class="component-item">• loadLanguage(<span class="component-var">locale</span>)</div>
+                                        <div class="component-item">• detectLanguage()</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="cache" data-file="src/utils/CacheManager.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>💾</span> CacheManager
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Cache Operations</div>
+                                        <div class="component-item">• get(<span class="component-var">key</span>): <span class="component-type">T | undefined</span></div>
+                                        <div class="component-item">• set(<span class="component-var">key</span>, <span class="component-var">value</span>, <span class="component-var">ttl?</span>)</div>
+                                        <div class="component-item">• invalidate(<span class="component-var">pattern</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="helpers" data-file="src/utils/HelperFunctions.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🛠️</span> HelperFunctions
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Utilities</div>
+                                        <div class="component-item">• formatCode(<span class="component-var">code</span>, <span class="component-var">language</span>)</div>
+                                        <div class="component-item">• validateInput(<span class="component-var">data</span>, <span class="component-var">schema</span>)</div>
+                                        <div class="component-item">• debounce(<span class="component-var">func</span>, <span class="component-var">wait</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tooltip" id="tooltip">
+                <div class="tooltip-title"></div>
+                <div class="tooltip-content"></div>
+            </div>
+            
+            <div class="minimap" id="minimap">
+                <div class="minimap-viewport" id="minimapViewport"></div>
+            </div>
+            
+            <!-- Advanced Controls Panel -->
+            <div id="advancedControls">
+                <div class="control-section">
+                    <h3><span>🎛️</span> Layer Filters</h3>
+                    <div class="filter-group">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-layer="vscode">
+                            <span>VS Code API Layer</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-layer="core">
+                            <span>Core Services Layer</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-layer="analysis">
+                            <span>Analysis Layer</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-layer="rendering">
+                            <span>Rendering Layer</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-layer="utility">
+                            <span>Utility Layer</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h3><span>🔗</span> Connection Filters</h3>
+                    <div class="filter-group">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-connection="control">
+                            <span>Control Flow</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-connection="data">
+                            <span>Data Flow</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-connection="event">
+                            <span>Event Flow</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-connection="bidirectional">
+                            <span>Bidirectional</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h3><span>📊</span> Complexity Metrics</h3>
+                    <div id="metricsDisplay">
+                        <div class="metric-item">
+                            <span>Total Components:</span>
+                            <span class="metric-value">25</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Total Connections:</span>
+                            <span class="metric-value">18</span>
+                        </div>
+                        <div style="margin-top: 12px; font-size: 12px; color: #8b949e;">
+                            Loading complexity data...
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h3><span>🕐</span> History Navigation</h3>
+                    <div class="history-controls">
+                        <button class="history-btn" id="historyBack" disabled>← Back</button>
+                        <button class="history-btn" id="historyForward" disabled>Forward →</button>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h3><span>🔍</span> Analysis Tools</h3>
+                    <button class="analysis-btn" onclick="if(window.diagramEnhancements) diagramEnhancements.findCircularDependencies()">
+                        Find Circular Dependencies
+                    </button>
+                    <button class="analysis-btn" onclick="if(window.diagramEnhancements) diagramEnhancements.analyzeCriticalPath()">
+                        Show Critical Path
+                    </button>
+                    <button class="analysis-btn" onclick="if(window.diagramEnhancements) diagramEnhancements.generateReport()">
+                        Generate Report
+                    </button>
+                    <button class="analysis-btn" onclick="if(window.diagramEnhancements) diagramEnhancements.plugins.heatmap.enable()">
+                        Enable Heatmap
+                    </button>
+                    <button class="analysis-btn" onclick="if(window.diagramEnhancements) diagramEnhancements.plugins.heatmap.disable()">
+                        Disable Heatmap
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-item">
+            <span>📍</span>
+            <span id="statusPosition">Position: 0, 0</span>
+        </div>
+        <div class="status-item">
+            <span>🔍</span>
+            <span id="statusZoom">Zoom: 100%</span>
+        </div>
+        <div class="status-item">
+            <span>📊</span>
+            <span id="statusMode">Mode: Normal</span>
+        </div>
+        <div class="status-item">
+            <span>⚡</span>
+            <span>CodeSync Diagram v2.0</span>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+    
+    <script>
+        // State Management
+        const state = {
+            zoom: 1,
+            pan: { x: 0, y: 0 },
+            isDragging: false,
+            dragStart: { x: 0, y: 0 },
+            selectedComponent: null,
+            connections: [
+                { from: 'extension', to: 'diagramService', label: 'activate', type: 'control' },
+                { from: 'extension', to: 'commands', label: 'register', type: 'control' },
+                { from: 'commands', to: 'codeParser', label: 'analyze', type: 'data' },
+                { from: 'codeParser', to: 'analyzers', label: 'AST', type: 'data' },
+                { from: 'analyzers', to: 'elementExtractor', label: 'elements', type: 'data' },
+                { from: 'elementExtractor', to: 'dependencyResolver', label: 'relations', type: 'data' },
+                { from: 'diagramService', to: 'diagramRenderer', label: 'render', type: 'control' },
+                { from: 'diagramRenderer', to: 'mermaidIntegration', label: 'mermaid', type: 'data' },
+                { from: 'diagramRenderer', to: 'd3Visualization', label: 'd3', type: 'data' },
+                { from: 'webviewProvider', to: 'reactComponents', label: 'postMessage', type: 'bidirectional' },
+                { from: 'reactComponents', to: 'webviewProvider', label: 'events', type: 'bidirectional' },
+                { from: 'fileWatcher', to: 'codeParser', label: 'onChange', type: 'event' },
+                { from: 'exportService', to: 'fileUtils', label: 'save', type: 'data' },
+                { from: 'errorDetection', to: 'logging', label: 'log', type: 'data' },
+                { from: 'themeManager', to: 'configService', label: 'config', type: 'data' },
+                { from: 'architectureService', to: 'diagramService', label: 'architecture', type: 'data' },
+                { from: 'navigationService', to: 'extension', label: 'navigate', type: 'control' },
+                { from: 'providers', to: 'analyzers', label: 'provide', type: 'data' }
+            ]
+        };
+        
+        // DOM Elements
+        const viewport = document.getElementById('viewport');
+        const diagramContent = document.getElementById('diagramContent');
+        const zoomLevel = document.getElementById('zoomLevel');
+        const sidebar = document.getElementById('sidebar');
+        const searchBox = document.getElementById('searchBox');
+        const searchInput = document.getElementById('searchInput');
+        const tooltip = document.getElementById('tooltip');
+        const activeConnections = document.getElementById('activeConnections');
+        const notification = document.getElementById('notification');
+        
+        // Initialize
+        function init() {
+            drawConnections();
+            attachEventListeners();
+            updateTransform();
+            setupMinimap();
+            updateStatusBar();
+        }
+        
+        // Draw Connections
+        function drawConnections() {
+            const svg = document.getElementById('connectionsSvg');
+            svg.innerHTML = '';
+            
+            // Add defs for markers
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            
+            // Arrow marker
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+            marker.setAttribute('id', 'arrowhead');
+            marker.setAttribute('markerWidth', '10');
+            marker.setAttribute('markerHeight', '7');
+            marker.setAttribute('refX', '9');
+            marker.setAttribute('refY', '3.5');
+            marker.setAttribute('orient', 'auto');
+            marker.setAttribute('fill', '#58a6ff');
+            
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
+            
+            marker.appendChild(polygon);
+            defs.appendChild(marker);
+            svg.appendChild(defs);
+            
+            // Draw connections
+            state.connections.forEach((conn, index) => {
+                const fromEl = document.querySelector(`[data-id="${conn.from}"]`);
+                const toEl = document.querySelector(`[data-id="${conn.to}"]`);
+                
+                if (fromEl && toEl) {
+                    const fromRect = fromEl.getBoundingClientRect();
+                    const toRect = toEl.getBoundingClientRect();
+                    const containerRect = diagramContent.getBoundingClientRect();
+                    
+                    const x1 = fromRect.left + fromRect.width / 2 - containerRect.left;
+                    const y1 = fromRect.bottom - containerRect.top;
+                    const x2 = toRect.left + toRect.width / 2 - containerRect.left;
+                    const y2 = toRect.top - containerRect.top;
+                    
+                    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    g.setAttribute('data-connection', `${conn.from}-${conn.to}`);
+                    
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const midY = (y1 + y2) / 2;
+                    const d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
+                    
+                    path.setAttribute('d', d);
+                    path.setAttribute('class', 'connection-path');
+                    path.setAttribute('id', `path-${index}`);
+                    path.setAttribute('data-type', conn.type);
+                    
+                    if (conn.type === 'bidirectional') {
+                        path.setAttribute('marker-end', 'url(#arrowhead)');
+                        path.setAttribute('marker-start', 'url(#arrowhead)');
+                    } else {
+                        path.setAttribute('marker-end', 'url(#arrowhead)');
+                    }
+                    
+                    g.appendChild(path);
+                    
+                    // Add label
+                    if (conn.label) {
+                        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        text.setAttribute('class', 'connection-label');
+                        
+                        const textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
+                        textPath.setAttribute('href', `#path-${index}`);
+                        textPath.setAttribute('startOffset', '50%');
+                        textPath.setAttribute('text-anchor', 'middle');
+                        textPath.textContent = conn.label;
+                        
+                        text.appendChild(textPath);
+                        g.appendChild(text);
+                    }
+                    
+                    svg.appendChild(g);
+                }
+            });
+        }
+        
+        // Event Listeners
+        function attachEventListeners() {
+            // Zoom controls
+            document.getElementById('zoomIn').addEventListener('click', () => zoom(0.1));
+            document.getElementById('zoomOut').addEventListener('click', () => zoom(-0.1));
+            document.getElementById('zoomReset').addEventListener('click', () => resetZoom());
+            
+            // Pan controls
+            viewport.addEventListener('mousedown', startDrag);
+            viewport.addEventListener('mousemove', drag);
+            viewport.addEventListener('mouseup', endDrag);
+            viewport.addEventListener('mouseleave', endDrag);
+            
+            // Mouse wheel zoom
+            viewport.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                zoom(delta);
+            });
+            
+            // Sidebar toggle
+            document.getElementById('toggleSidebar').addEventListener('click', toggleSidebar);
+            
+            // Search
+            document.getElementById('searchBtn').addEventListener('click', toggleSearch);
+            searchInput.addEventListener('input', performSearch);
+            
+            // Export
+            document.getElementById('exportBtn').addEventListener('click', exportDiagram);
+            
+            // Fullscreen
+            document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+            
+            // Advanced toggle
+            document.getElementById('advancedToggle').addEventListener('click', toggleAdvancedPanel);
+            
+            // Component clicks
+            document.querySelectorAll('.component').forEach(comp => {
+                comp.addEventListener('click', () => selectComponent(comp));
+                comp.addEventListener('mouseenter', (e) => showTooltip(e, comp));
+                comp.addEventListener('mouseleave', hideTooltip);
+            });
+            
+            // File links
+            document.querySelectorAll('.file-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    const file = link.getAttribute('data-file');
+                    console.log(`Opening file: ${file}`);
+                    // In VS Code extension, this would trigger file opening
+                    showNotification(`Would open: ${file}`);
+                });
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', handleKeyboard);
+            
+            // Window resize
+            window.addEventListener('resize', () => {
+                drawConnections();
+                updateMinimap();
+            });
+            
+            // Mouse move for status bar
+            viewport.addEventListener('mousemove', updateStatusBar);
+        }
+        
+        // Zoom functions
+        function zoom(delta) {
+            state.zoom = Math.max(0.3, Math.min(3, state.zoom + delta));
+            updateTransform();
+            updateZoomLevel();
+            updateStatusBar();
+        }
+        
+        function resetZoom() {
+            state.zoom = 1;
+            state.pan = { x: 0, y: 0 };
+            updateTransform();
+            updateZoomLevel();
+            updateStatusBar();
+        }
+        
+        function updateTransform() {
+            diagramContent.style.transform = `translate(-50%, -50%) translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.zoom})`;
+        }
+        
+        function updateZoomLevel() {
+            zoomLevel.textContent = `${Math.round(state.zoom * 100)}%`;
+            document.getElementById('statusZoom').textContent = `Zoom: ${Math.round(state.zoom * 100)}%`;
+        }
+        
+        // Pan functions
+        function startDrag(e) {
+            if (e.target.closest('.component')) return;
+            state.isDragging = true;
+            state.dragStart = { x: e.clientX - state.pan.x, y: e.clientY - state.pan.y };
+            viewport.classList.add('dragging');
+        }
+        
+        function drag(e) {
+            if (!state.isDragging) return;
+            state.pan.x = e.clientX - state.dragStart.x;
+            state.pan.y = e.clientY - state.dragStart.y;
+            updateTransform();
+            updateMinimap();
+        }
+        
+        function endDrag() {
+            state.isDragging = false;
+            viewport.classList.remove('dragging');
+        }
+        
+        // Component selection
+        function selectComponent(comp) {
+            // Remove previous selection
+            document.querySelectorAll('.component.selected').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('.connection-path.active').forEach(c => c.classList.remove('active'));
+            
+            // Add selection
+            comp.classList.add('selected');
+            state.selectedComponent = comp.getAttribute('data-id');
+            
+            // Highlight connections
+            const connections = state.connections.filter(c => 
+                c.from === state.selectedComponent || c.to === state.selectedComponent
+            );
+            
+            connections.forEach(conn => {
+                const path = document.querySelector(`[data-connection="${conn.from}-${conn.to}"] path`);
+                if (path) path.classList.add('active');
+            });
+            
+            // Update sidebar
+            updateActiveConnections(connections);
+        }
+        
+        function updateActiveConnections(connections) {
+            if (connections.length === 0) {
+                activeConnections.innerHTML = '<div style="color: #8b949e;">No connections</div>';
+                return;
+            }
+            
+            const html = connections.map(conn => {
+                const direction = conn.from === state.selectedComponent ? '→' : '←';
+                const other = conn.from === state.selectedComponent ? conn.to : conn.from;
+                return `
+                    <div class="file-link" style="cursor: pointer;" onclick="scrollToComponent('${other}')">
+                        <span>${direction}</span>
+                        <span>${other}</span>
+                        <span style="color: #8b949e; font-size: 11px;">(${conn.label})</span>
+                    </div>
+                `;
+            }).join('');
+            
+            activeConnections.innerHTML = html;
+        }
+        
+        function scrollToComponent(id) {
+            const comp = document.querySelector(`[data-id="${id}"]`);
+            if (comp) {
+                comp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                selectComponent(comp);
+            }
+        }
+        
+        // UI Functions
+        function toggleSidebar() {
+            sidebar.classList.toggle('collapsed');
+            document.getElementById('toggleSidebar').classList.toggle('active');
+        }
+        
+        function toggleSearch() {
+            searchBox.classList.toggle('show');
+            if (searchBox.classList.contains('show')) {
+                searchInput.focus();
+            } else {
+                searchInput.value = '';
+                performSearch();
+            }
+        }
+        
+        function performSearch() {
+            const query = searchInput.value.toLowerCase();
+            
+            document.querySelectorAll('.component').forEach(comp => {
+                const text = comp.textContent.toLowerCase();
+                if (query && !text.includes(query)) {
+                    comp.style.opacity = '0.3';
+                } else {
+                    comp.style.opacity = '1';
+                }
+            });
+        }
+        
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+        
+        function toggleAdvancedPanel() {
+            const panel = document.getElementById('advancedControls');
+            panel.classList.toggle('show');
+            document.getElementById('advancedToggle').classList.toggle('active');
+        }
+        
+        // Keyboard Shortcuts
+        function handleKeyboard(e) {
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                toggleSearch();
+            } else if (e.key === 's' && !e.ctrlKey && e.target.tagName !== 'INPUT') {
+                toggleSidebar();
+            } else if (e.key === 'a' && !e.ctrlKey && e.target.tagName !== 'INPUT') {
+                toggleAdvancedPanel();
+            } else if (e.key === '0' && e.target.tagName !== 'INPUT') {
+                resetZoom();
+            } else if (e.key === '+' || e.key === '=') {
+                zoom(0.1);
+            } else if (e.key === '-') {
+                zoom(-0.1);
+            } else if (e.key === 'F11') {
+                e.preventDefault();
+                toggleFullscreen();
+            } else if (e.key === 'Escape') {
+                searchBox.classList.remove('show');
+                searchInput.value = '';
+                performSearch();
+            }
+        }
+        
+        // Tooltip Functions
+        function showTooltip(e, comp) {
+            const id = comp.getAttribute('data-id');
+            const file = comp.getAttribute('data-file');
+            const title = comp.querySelector('.component-title').textContent.trim();
+            
+            tooltip.querySelector('.tooltip-title').textContent = title;
+            
+            // Get connection count
+            const connectionCount = state.connections.filter(c => 
+                c.from === id || c.to === id
+            ).length;
+            
+            tooltip.querySelector('.tooltip-content').innerHTML = `
+                <div><strong>ID:</strong> ${id}</div>
+                <div><strong>File:</strong> ${file}</div>
+                <div><strong>Connections:</strong> ${connectionCount}</div>
+                <div style="margin-top: 8px; font-size: 11px; color: #8b949e;">
+                    Click to select • Double-click to open file
+                </div>
+            `;
+            
+            tooltip.classList.add('show');
+            
+            // Position tooltip
+            const rect = comp.getBoundingClientRect();
+            tooltip.style.left = rect.left + 'px';
+            tooltip.style.top = rect.bottom + 10 + 'px';
+            
+            // Adjust if off screen
+            const tooltipRect = tooltip.getBoundingClientRect();
+            if (tooltipRect.right > window.innerWidth) {
+                tooltip.style.left = window.innerWidth - tooltipRect.width - 20 + 'px';
+            }
+            if (tooltipRect.bottom > window.innerHeight) {
+                tooltip.style.top = rect.top - tooltipRect.height - 10 + 'px';
+            }
+        }
+        
+        function hideTooltip() {
+            tooltip.classList.remove('show');
+        }
+        
+        // Export Functions
+        function exportDiagram() {
+            const menu = document.createElement('div');
+            menu.style.cssText = `
+                position: absolute;
+                background: #1f2428;
+                border: 1px solid #30363d;
+                border-radius: 6px;
+                padding: 8px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+                z-index: 1000;
+            `;
+            
+            const formats = ['PNG', 'SVG', 'PDF', 'HTML'];
+            formats.forEach(format => {
+                const option = document.createElement('div');
+                option.style.cssText = `
+                    padding: 8px 16px;
+                    cursor: pointer;
+                    border-radius: 4px;
+                    transition: background 0.2s;
+                `;
+                option.textContent = `Export as ${format}`;
+                option.onmouseover = () => option.style.background = '#30363d';
+                option.onmouseout = () => option.style.background = 'transparent';
+                option.onclick = () => {
+                    exportAs(format);
+                    document.body.removeChild(menu);
+                };
+                menu.appendChild(option);
+            });
+            
+            // Position menu
+            const btnRect = document.getElementById('exportBtn').getBoundingClientRect();
+            menu.style.top = btnRect.bottom + 5 + 'px';
+            menu.style.right = window.innerWidth - btnRect.right + 'px';
+            
+            document.body.appendChild(menu);
+            
+            // Close menu on outside click
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu() {
+                    if (document.body.contains(menu)) {
+                        document.body.removeChild(menu);
+                    }
+                    document.removeEventListener('click', closeMenu);
+                });
+            }, 0);
+        }
+        
+        function exportAs(format) {
+            showNotification(`Exporting as ${format}...`);
+            
+            // In a real implementation, this would use canvas or other methods
+            // to actually export the diagram
+            setTimeout(() => {
+                showNotification(`Exported successfully as ${format}!`);
+            }, 1000);
+        }
+        
+        // Minimap Functions
+        function setupMinimap() {
+            const minimap = document.getElementById('minimap');
+            const viewport = document.getElementById('minimapViewport');
+            
+            updateMinimap();
+            
+            // Make viewport draggable
+            let isDraggingMinimap = false;
+            let minimapStart = { x: 0, y: 0 };
+            
+            viewport.addEventListener('mousedown', (e) => {
+                isDraggingMinimap = true;
+                minimapStart = {
+                    x: e.clientX - viewport.offsetLeft,
+                    y: e.clientY - viewport.offsetTop
+                };
+                e.stopPropagation();
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isDraggingMinimap) return;
+                
+                const minimapRect = minimap.getBoundingClientRect();
+                const x = e.clientX - minimapRect.left - minimapStart.x;
+                const y = e.clientY - minimapRect.top - minimapStart.y;
+                
+                // Convert minimap position to main view position
+                const scale = 1600 / 184; // diagram width / minimap width
+                state.pan.x = -x * scale + window.innerWidth / 2;
+                state.pan.y = -y * scale + window.innerHeight / 2;
+                
+                updateTransform();
+                updateMinimap();
+            });
+            
+            document.addEventListener('mouseup', () => {
+                isDraggingMinimap = false;
+            });
+        }
+        
+        function updateMinimap() {
+            const viewport = document.getElementById('minimapViewport');
+            const minimap = document.getElementById('minimap');
+            
+            // Calculate viewport size and position
+            const scale = 184 / 1600; // minimap width / diagram width
+            const viewWidth = window.innerWidth * scale / state.zoom;
+            const viewHeight = window.innerHeight * scale / state.zoom;
+            const viewX = (-state.pan.x + window.innerWidth / 2) * scale / state.zoom - viewWidth / 2;
+            const viewY = (-state.pan.y + window.innerHeight / 2) * scale / state.zoom - viewHeight / 2;
+            
+            viewport.style.width = Math.min(viewWidth, 184) + 'px';
+            viewport.style.height = Math.min(viewHeight, 134) + 'px';
+            viewport.style.left = Math.max(8, Math.min(viewX, 184 - viewWidth + 8)) + 'px';
+            viewport.style.top = Math.max(8, Math.min(viewY, 134 - viewHeight + 8)) + 'px';
+        }
+        
+        // Status Bar
+        function updateStatusBar(e) {
+            if (e) {
+                const rect = diagramContent.getBoundingClientRect();
+                const x = Math.round((e.clientX - rect.left - rect.width / 2) / state.zoom);
+                const y = Math.round((e.clientY - rect.top - rect.height / 2) / state.zoom);
+                document.getElementById('statusPosition').textContent = `Position: ${x}, ${y}`;
+            }
+            
+            document.getElementById('statusZoom').textContent = `Zoom: ${Math.round(state.zoom * 100)}%`;
+            
+            // Update mode based on current state
+            let mode = 'Normal';
+            if (state.isDragging) mode = 'Panning';
+            else if (searchBox.classList.contains('show')) mode = 'Searching';
+            else if (state.selectedComponent) mode = 'Selected';
+            
+            document.getElementById('statusMode').textContent = `Mode: ${mode}`;
+        }
+        
+        // Notification Function
+        function showNotification(message) {
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Animation Functions
+        function animateConnections() {
+            const paths = document.querySelectorAll('.connection-path');
+            paths.forEach((path, index) => {
+                setTimeout(() => {
+                    path.classList.add('animated');
+                    setTimeout(() => {
+                        path.classList.remove('animated');
+                    }, 2000);
+                }, index * 100);
+            });
+        }
+        
+        // Double click handling for file opening
+        document.addEventListener('dblclick', (e) => {
+            const comp = e.target.closest('.component');
+            if (comp) {
+                const file = comp.getAttribute('data-file');
+                showNotification(`Opening ${file} in VS Code...`);
+                // In VS Code extension, this would actually open the file
+            }
+        });
+        
+        // Context Menu
+        document.addEventListener('contextmenu', (e) => {
+            const comp = e.target.closest('.component');
+            if (comp) {
+                e.preventDefault();
+                showContextMenu(e, comp);
+            }
+        });
+        
+        function showContextMenu(e, comp) {
+            const menu = document.createElement('div');
+            menu.style.cssText = `
+                position: absolute;
+                background: #1f2428;
+                border: 1px solid #30363d;
+                border-radius: 6px;
+                padding: 8px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+                z-index: 1000;
+                min-width: 200px;
+            `;
+            
+            const actions = [
+                { icon: '📂', text: 'Open File', action: () => openFile(comp) },
+                { icon: '🔍', text: 'Find References', action: () => findReferences(comp) },
+                { icon: '📋', text: 'Copy Component ID', action: () => copyToClipboard(comp.getAttribute('data-id')) },
+                { icon: '🎯', text: 'Focus on This', action: () => focusComponent(comp) },
+                { icon: '🔗', text: 'Show All Connections', action: () => showAllConnections(comp) }
+            ];
+            
+            actions.forEach(({ icon, text, action }) => {
+                const item = document.createElement('div');
+                item.style.cssText = `
+                    padding: 8px 12px;
+                    cursor: pointer;
+                    border-radius: 4px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: background 0.2s;
+                `;
+                item.innerHTML = `<span>${icon}</span> ${text}`;
+                item.onmouseover = () => item.style.background = '#30363d';
+                item.onmouseout = () => item.style.background = 'transparent';
+                item.onclick = () => {
+                    action();
+                    document.body.removeChild(menu);
+                };
+                menu.appendChild(item);
+            });
+            
+            // Position menu
+            menu.style.left = e.pageX + 'px';
+            menu.style.top = e.pageY + 'px';
+            
+            // Adjust if off screen
+            document.body.appendChild(menu);
+            const menuRect = menu.getBoundingClientRect();
+            if (menuRect.right > window.innerWidth) {
+                menu.style.left = e.pageX - menuRect.width + 'px';
+            }
+            if (menuRect.bottom > window.innerHeight) {
+                menu.style.top = e.pageY - menuRect.height + 'px';
+            }
+            
+            // Close menu on outside click
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu() {
+                    if (document.body.contains(menu)) {
+                        document.body.removeChild(menu);
+                    }
+                    document.removeEventListener('click', closeMenu);
+                });
+            }, 0);
+        }
+        
+        // Context Menu Actions
+        function openFile(comp) {
+            const file = comp.getAttribute('data-file');
+            showNotification(`Opening ${file}...`);
+        }
+        
+        function findReferences(comp) {
+            const id = comp.getAttribute('data-id');
+            showNotification(`Finding references for ${id}...`);
+            selectComponent(comp);
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('Copied to clipboard!');
+            });
+        }
+        
+        function focusComponent(comp) {
+            selectComponent(comp);
+            
+            // Center the component in view
+            const rect = comp.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const viewCenterX = window.innerWidth / 2;
+            const viewCenterY = window.innerHeight / 2;
+            
+            state.pan.x -= (centerX - viewCenterX) / state.zoom;
+            state.pan.y -= (centerY - viewCenterY) / state.zoom;
+            
+            updateTransform();
+            updateMinimap();
+        }
+        
+        function showAllConnections(comp) {
+            const id = comp.getAttribute('data-id');
+            
+            // Highlight all connections
+            document.querySelectorAll('.connection-path').forEach(path => {
+                path.classList.remove('active');
+            });
+            
+            state.connections.forEach(conn => {
+                if (conn.from === id || conn.to === id) {
+                    const path = document.querySelector(`[data-connection="${conn.from}-${conn.to}"] path`);
+                    if (path) {
+                        path.classList.add('active');
+                        
+                        // Also highlight connected components
+                        const otherId = conn.from === id ? conn.to : conn.from;
+                        const otherComp = document.querySelector(`[data-id="${otherId}"]`);
+                        if (otherComp) {
+                            otherComp.style.boxShadow = '0 0 0 2px #58a6ff';
+                            setTimeout(() => {
+                                otherComp.style.boxShadow = '';
+                            }, 3000);
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            init();
+            
+            // Show welcome message
+            setTimeout(() => {
+                showNotification('Welcome to CodeSync Enhanced! Press "A" for advanced controls.');
+            }, 500);
+            
+            // Demo animation
+            setTimeout(() => {
+                animateConnections();
+            }, 1000);
+        });
+        
+        
+        // Enhanced features code (simplified version integrated)
+        class DiagramEnhancements {
+            constructor() {
+                this.filters = {
+                    layers: new Set(['vscode', 'core', 'analysis', 'rendering', 'utility']),
+                    connectionTypes: new Set(['control', 'data', 'event', 'bidirectional'])
+                };
+                
+                this.metrics = {
+                    componentComplexity: new Map(),
+                    connectionDensity: new Map()
+                };
+                
+                this.init();
+            }
+            
+            init() {
+                this.calculateMetrics();
+                this.setupFilterListeners();
+                this.updateMetricsDisplay();
+            }
+            
+            calculateMetrics() {
+                document.querySelectorAll('.component').forEach(comp => {
+                    const id = comp.getAttribute('data-id');
+                    const methods = comp.querySelectorAll('.component-item').length;
+                    const connections = state.connections.filter(c => 
+                        c.from === id || c.to === id
+                    ).length;
+                    
+                    const complexity = methods * 0.6 + connections * 0.4;
+                    this.metrics.componentComplexity.set(id, complexity);
+                });
+            }
+            
+            setupFilterListeners() {
+                // Layer filters
+                document.querySelectorAll('[data-filter-layer]').forEach(checkbox => {
+                    checkbox.addEventListener('change', (e) => {
+                        const layer = e.target.getAttribute('data-filter-layer');
+                        if (e.target.checked) {
+                            this.filters.layers.add(layer);
+                        } else {
+                            this.filters.layers.delete(layer);
+                        }
+                        this.applyFilters();
+                    });
+                });
+                
+                // Connection filters
+                document.querySelectorAll('[data-filter-connection]').forEach(checkbox => {
+                    checkbox.addEventListener('change', (e) => {
+                        const type = e.target.getAttribute('data-filter-connection');
+                        if (e.target.checked) {
+                            this.filters.connectionTypes.add(type);
+                        } else {
+                            this.filters.connectionTypes.delete(type);
+                        }
+                        this.applyFilters();
+                    });
+                });
+            }
+            
+            applyFilters() {
+                // Filter layers
+                document.querySelectorAll('.layer').forEach(layer => {
+                    const layerId = layer.getAttribute('data-layer');
+                    layer.style.display = this.filters.layers.has(layerId) ? 'block' : 'none';
+                });
+                
+                // Filter connections
+                document.querySelectorAll('.connection-path').forEach(path => {
+                    const type = path.getAttribute('data-type');
+                    const shouldShow = this.filters.connectionTypes.has(type);
+                    path.parentElement.style.display = shouldShow ? 'block' : 'none';
+                });
+                
+                // Redraw connections
+                setTimeout(() => drawConnections(), 100);
+            }
+            
+            updateMetricsDisplay() {
+                const display = document.getElementById('metricsDisplay');
+                
+                const topComponents = Array.from(this.metrics.componentComplexity.entries())
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5);
+                
+                display.innerHTML = `
+                    <div class="metric-item">
+                        <span>Total Components:</span>
+                        <span class="metric-value">25</span>
+                    </div>
+                    <div class="metric-item">
+                        <span>Total Connections:</span>
+                        <span class="metric-value">18</span>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 12px; color: #8b949e;">
+                        Top Complex Components:
+                    </div>
+                    ${topComponents.map(([id, complexity]) => {
+                        const level = complexity > 10 ? 'high' : complexity > 5 ? 'medium' : 'low';
+                        return `
+                            <div class="metric-item">
+                                <span>${id}</span>
+                                <span class="metric-value">
+                                    ${complexity.toFixed(1)}
+                                    <span class="complexity-indicator complexity-${level}"></span>
+                                </span>
+                            </div>
+                        `;
+                    }).join('')}
+                `;
+            }
+            
+            findCircularDependencies() {
+                const visited = new Set();
+                const recursionStack = new Set();
+                const circles = [];
+                
+                const dfs = (nodeId, path = []) => {
+                    visited.add(nodeId);
+                    recursionStack.add(nodeId);
+                    path.push(nodeId);
+                    
+                    const connections = state.connections.filter(c => c.from === nodeId);
+                    
+                    for (const conn of connections) {
+                        if (!visited.has(conn.to)) {
+                            dfs(conn.to, [...path]);
+                        } else if (recursionStack.has(conn.to)) {
+                            const cycleStart = path.indexOf(conn.to);
+                            if (cycleStart !== -1) {
+                                circles.push([...path.slice(cycleStart), conn.to]);
+                            }
+                        }
+                    }
+                    
+                    recursionStack.delete(nodeId);
+                };
+                
+                document.querySelectorAll('.component').forEach(comp => {
+                    const id = comp.getAttribute('data-id');
+                    if (!visited.has(id)) {
+                        dfs(id);
+                    }
+                });
+                
+                if (circles.length > 0) {
+                    circles.forEach(circle => {
+                        circle.forEach(nodeId => {
+                            const comp = document.querySelector(`[data-id="${nodeId}"]`);
+                            if (comp) {
+                                comp.style.border = '2px solid #ff6b6b';
+                            }
+                        });
+                    });
+                    showNotification(`Found ${circles.length} circular dependencies!`);
+                } else {
+                    showNotification('No circular dependencies found!');
+                }
+            }
+            
+            analyzeCriticalPath() {
+                const entryPoints = ['extension', 'commands'];
+                const paths = [];
+                
+                const findPaths = (nodeId, path = [], visited = new Set()) => {
+                    if (visited.has(nodeId)) return;
+                    
+                    visited.add(nodeId);
+                    path.push(nodeId);
+                    
+                    const connections = state.connections.filter(c => c.from === nodeId);
+                    
+                    if (connections.length === 0) {
+                        paths.push([...path]);
+                    } else {
+                        connections.forEach(conn => {
+                            findPaths(conn.to, [...path], new Set(visited));
+                        });
+                    }
+                };
+                
+                entryPoints.forEach(entry => findPaths(entry));
+                
+                const criticalPath = paths.reduce((longest, current) => 
+                    current.length > longest.length ? current : longest, []
+                );
+                
+                // Highlight critical path
+                criticalPath.forEach((nodeId, index) => {
+                    const comp = document.querySelector(`[data-id="${nodeId}"]`);
+                    if (comp) {
+                        comp.style.boxShadow = `0 0 0 3px #51cf66`;
+                    }
+                });
+                
+                showNotification(`Critical path: ${criticalPath.length} components`);
+            }
+            
+            generateReport() {
+                const report = {
+                    timestamp: new Date().toISOString(),
+                    overview: {
+                        totalComponents: 25,
+                        totalConnections: 18,
+                        layers: 5
+                    },
+                    complexityAnalysis: {
+                        average: 0,
+                        highest: null
+                    }
+                };
+                
+                const complexities = Array.from(this.metrics.componentComplexity.values());
+                report.complexityAnalysis.average = (
+                    complexities.reduce((a, b) => a + b, 0) / complexities.length
+                ).toFixed(2);
+                
+                const sorted = Array.from(this.metrics.componentComplexity.entries())
+                    .sort((a, b) => b[1] - a[1]);
+                
+                report.complexityAnalysis.highest = {
+                    component: sorted[0][0],
+                    value: sorted[0][1].toFixed(2)
+                };
+                
+                const content = JSON.stringify(report, null, 2);
+                const blob = new Blob([content], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `codesync-analysis-${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showNotification('Report downloaded successfully!');
+            }
+            
+            plugins = {
+                heatmap: {
+                    enable: () => {
+                        document.querySelectorAll('.component').forEach(comp => {
+                            const id = comp.getAttribute('data-id');
+                            const complexity = this.metrics.componentComplexity.get(id) || 0;
+                            
+                            const hue = 120 - (complexity * 10);
+                            const saturation = 70;
+                            const lightness = 50;
+                            
+                            comp.style.backgroundColor = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.2)`;
+                        });
+                        showNotification('Heatmap enabled!');
+                    },
+                    disable: () => {
+                        document.querySelectorAll('.component').forEach(comp => {
+                            comp.style.backgroundColor = '';
+                        });
+                        showNotification('Heatmap disabled!');
+                    }
+                }
+            };
+        }
+        
+        // Initialize enhancements
+        let diagramEnhancements;
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                diagramEnhancements = new DiagramEnhancements();
+                window.diagramEnhancements = diagramEnhancements;
+            }, 100);
+        });
+    </script>
+</body>
+</html>
+        

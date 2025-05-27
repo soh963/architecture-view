@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeSync Diagram - Enhanced Interactive Architecture</title>
+    <!-- 스타일 분리: codesync-diagram-enhanced.css -->
+    <link rel="stylesheet" href="codesync-diagram-enhanced.css">
+</head>
+<body>
+    <div class="header">
+        <h1>CodeSync Diagram - Enhanced Architecture View</h1>
+        <div class="controls">
+            <div class="control-group">
+                <button class="control-btn" id="toggleSidebar" title="Toggle Sidebar (S)">
+                    <span>📋</span> Sidebar
+                </button>
+                <button class="control-btn" id="searchBtn" title="Search (Ctrl+F)">
+                    <span>🔍</span> Search
+                </button>
+            </div>
+            
+            <div class="control-group">
+                <button class="control-btn" id="zoomOut" title="Zoom Out (-)">
+                    <span>➖</span>
+                </button>
+                <div class="zoom-level" id="zoomLevel">100%</div>
+                <button class="control-btn" id="zoomIn" title="Zoom In (+)">
+                    <span>➕</span>
+                </button>
+                <button class="control-btn" id="zoomReset" title="Reset Zoom (0)">
+                    <span>🔄</span>
+                </button>
+            </div>
+            
+            <div class="control-group">
+                <button class="control-btn" id="exportBtn" title="Export Diagram">
+                    <span>💾</span> Export
+                </button>
+                <button class="control-btn" id="fullscreenBtn" title="Fullscreen (F11)">
+                    <span>⛶</span>
+                </button>
+                <button class="control-btn" id="advancedToggle" title="Advanced Controls (A)">
+                    <span>⚙️</span> Advanced
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    <span>📁</span> Quick Navigation
+                </div>
+                <div class="sidebar-content">
+                    <div class="file-link" data-file="src/extension.ts">
+                        <span class="file-icon">📄</span>
+                        src/extension.ts
+                    </div>
+                    <div class="file-link" data-file="src/diagram/DiagramService.ts">
+                        <span class="file-icon">📄</span>
+                        src/diagram/DiagramService.ts
+                    </div>
+                    <div class="file-link" data-file="src/webview/MermaidWebviewProvider.ts">
+                        <span class="file-icon">📄</span>
+                        src/webview/MermaidWebviewProvider.ts
+                    </div>
+                    <div class="file-link" data-file="src/providers/CodeElementHoverProvider.ts">
+                        <span class="file-icon">📄</span>
+                        src/providers/CodeElementHoverProvider.ts
+                    </div>
+                    <div class="file-link" data-file="src/analyzer/CodeElementAnalyzer.ts">
+                        <span class="file-icon">📄</span>
+                        src/analyzer/CodeElementAnalyzer.ts
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    <span>🔌</span> Active Connections
+                </div>
+                <div class="sidebar-content" id="activeConnections">
+                    Click on a component to see its connections
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    <span>📊</span> Statistics
+                </div>
+                <div class="sidebar-content">
+                    <div>Total Components: <strong>25</strong></div>
+                    <div>Total Connections: <strong>18</strong></div>
+                    <div>Layers: <strong>5</strong></div>
+                    <div>Language Support: <strong>9</strong></div>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    <span>⌨️</span> Keyboard Shortcuts
+                </div>
+                <div class="sidebar-content">
+                    <div><kbd>+</kbd> / <kbd>-</kbd> : Zoom In/Out</div>
+                    <div><kbd>0</kbd> : Reset Zoom</div>
+                    <div><kbd>S</kbd> : Toggle Sidebar</div>
+                    <div><kbd>A</kbd> : Advanced Panel</div>
+                    <div><kbd>Ctrl+F</kbd> : Search</div>
+                    <div><kbd>F11</kbd> : Fullscreen</div>
+                    <div><kbd>Click+Drag</kbd> : Pan</div>
+                    <div><kbd>Scroll</kbd> : Zoom</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="diagram-container">
+            <div class="search-box" id="searchBox">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search components, functions, variables...">
+            </div>
+            
+            <div class="diagram-viewport" id="viewport">
+                <div class="diagram-content" id="diagramContent">
+                    <svg class="connections-svg" id="connectionsSvg"></svg>
+                    
+                    <!-- VS Code Extension API Layer -->
+                    <div class="layer layer-vscode" data-layer="vscode">
+                        <span class="layer-title">VS Code Extension API Layer</span>
+                        <div class="components-grid">
+                            <div class="component entry-point" data-id="extension" data-file="src/extension.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🚀</span> extension.ts
+                                    </div>
+                                    <div class="component-badge">Entry</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Functions</div>
+                                        <div class="component-item">• activate(<span class="component-var">context</span>: <span class="component-type">ExtensionContext</span>)</div>
+                                        <div class="component-item">• deactivate(): <span class="component-type">void</span></div>
+                                        <div class="component-item">• analyzeCode(<span class="component-var">content</span>, <span class="component-var">language</span>)</div>
+                                        <div class="component-item">• convertAnalysisToDiagramData()</div>
+                                    </div>
+                                    <div class="component-section">
+                                        <div class="component-section-title">Variables</div>
+                                        <div class="component-item">• <span class="component-var">statusBarItem</span>: <span class="component-type">StatusBarItem</span></div>
+                                        <div class="component-item">• <span class="component-var">currentVersion</span>: <span class="component-type">string</span></div>
+                                        <div class="component-item">• <span class="component-var">mermaidProvider</span>: <span class="component-type">MermaidWebviewProvider</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="commands" data-file="src/commands/index.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>⚡</span> Command Registration
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Commands</div>
+                                        <div class="component-item">• codeAnalyzer.start</div>
+                                        <div class="component-item">• codesync.showBasicDiagram</div>
+                                        <div class="component-item">• codesync.diagram.class</div>
+                                        <div class="component-item">• codesync.diagram.sequence</div>
+                                        <div class="component-item">• codesync.export.[format]</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="webviewProvider" data-file="src/webview/WebviewProvider.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🖼️</span> Webview Provider
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Methods</div>
+                                        <div class="component-item">• createWebviewPanel(<span class="component-var">context</span>)</div>
+                                        <div class="component-item">• postMessage(<span class="component-var">message</span>: <span class="component-type">any</span>)</div>
+                                        <div class="component-item">• receiveMessage(<span class="component-var">handler</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="providers" data-file="src/providers/index.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🔧</span> Language Providers
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Providers</div>
+                                        <div class="component-item">• CodeElementHoverProvider</div>
+                                        <div class="component-item">• CodeElementAnalyzer</div>
+                                        <div class="component-item">• CodeVisualizationProvider</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="fileWatcher" data-file="src/utils/FileWatcher.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>👁️</span> File System Watcher
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Events</div>
+                                        <div class="component-item">• onDidChange(<span class="component-var">uri</span>: <span class="component-type">Uri</span>)</div>
+                                        <div class="component-item">• onDidCreate(<span class="component-var">uri</span>: <span class="component-type">Uri</span>)</div>
+                                        <div class="component-item">• onDidDelete(<span class="component-var">uri</span>: <span class="component-type">Uri</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Core Services Layer -->
+                    <div class="layer layer-core" data-layer="core">
+                        <span class="layer-title">Core Services Layer</span>
+                        <div class="components-grid">
+                            <div class="component service" data-id="diagramService" data-file="src/services/DiagramService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>📊</span> DiagramService
+                                    </div>
+                                    <div class="component-badge">Service</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Methods</div>
+                                        <div class="component-item">• generateDiagram(<span class="component-var">analysis</span>)</div>
+                                        <div class="component-item">• updateDiagram(<span class="component-var">nodeId</span>, <span class="component-var">data</span>)</div>
+                                        <div class="component-item">• exportDiagram(<span class="component-var">format</span>)</div>
+                                    </div>
+                                    <div class="component-section">
+                                        <div class="component-section-title">State</div>
+                                        <div class="component-item">• <span class="component-var">currentDiagram</span>: <span class="component-type">DiagramData</span></div>
+                                        <div class="component-item">• <span class="component-var">diagramCache</span>: <span class="component-type">Map</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component service" data-id="architectureService" data-file="src/services/ArchitectureDiagramService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🏗️</span> ArchitectureDiagramService
+                                    </div>
+                                    <div class="component-badge">Service</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Methods</div>
+                                        <div class="component-item">• generateProjectArchitecture()</div>
+                                        <div class="component-item">• analyzeProjectStructure()</div>
+                                        <div class="component-item">• createArchitectureNodes()</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component service" data-id="navigationService" data-file="src/navigation/NavigationService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🧭</span> NavigationService
+                                    </div>
+                                    <div class="component-badge">Service</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Functions</div>
+                                        <div class="component-item">• navigateToElement(<span class="component-var">element</span>)</div>
+                                        <div class="component-item">• goToDefinition(<span class="component-var">symbol</span>)</div>
+                                        <div class="component-item">• findReferences(<span class="component-var">symbol</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component service" data-id="exportService" data-file="src/export/ExportService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>💾</span> ExportService
+                                    </div>
+                                    <div class="component-badge">Service</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Exporters</div>
+                                        <div class="component-item">• exportToPNG(<span class="component-var">diagram</span>)</div>
+                                        <div class="component-item">• exportToSVG(<span class="component-var">diagram</span>)</div>
+                                        <div class="component-item">• exportToPDF(<span class="component-var">diagram</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component service" data-id="configService" data-file="src/config/ConfigurationService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>⚙️</span> ConfigurationService
+                                    </div>
+                                    <div class="component-badge">Service</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Methods</div>
+                                        <div class="component-item">• getConfiguration(<span class="component-var">section</span>)</div>
+                                        <div class="component-item">• updateConfiguration(<span class="component-var">key</span>, <span class="component-var">value</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Analysis & Processing Layer -->
+                    <div class="layer layer-analysis" data-layer="analysis">
+                        <span class="layer-title">Analysis & Processing Layer</span>
+                        <div class="components-grid">
+                            <div class="component" data-id="codeParser" data-file="src/parser/CodeParser.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🔍</span> CodeParser
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Parser Methods</div>
+                                        <div class="component-item">• parseTypeScript(<span class="component-var">code</span>: <span class="component-type">string</span>)</div>
+                                        <div class="component-item">• parseJavaScript(<span class="component-var">code</span>: <span class="component-type">string</span>)</div>
+                                        <div class="component-item">• parsePython(<span class="component-var">code</span>: <span class="component-type">string</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="analyzers" data-file="src/analyzer/LanguageAnalyzers.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🧪</span> Language Analyzers
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Analyzers</div>
+                                        <div class="component-item">• TypeScriptAnalyzer</div>
+                                        <div class="component-item">• PythonAnalyzer</div>
+                                        <div class="component-item">• JavaAnalyzer</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="elementExtractor" data-file="src/analyzer/CodeElementExtractor.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🔬</span> CodeElementExtractor
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Extract Methods</div>
+                                        <div class="component-item">• extractClasses(<span class="component-var">ast</span>)</div>
+                                        <div class="component-item">• extractFunctions(<span class="component-var">ast</span>)</div>
+                                        <div class="component-item">• extractInterfaces(<span class="component-var">ast</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="dependencyResolver" data-file="src/analyzer/DependencyResolver.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🔗</span> DependencyResolver
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Resolution</div>
+                                        <div class="component-item">• resolveDependencies(<span class="component-var">elements</span>)</div>
+                                        <div class="component-item">• buildDependencyGraph()</div>
+                                        <div class="component-item">• detectCircularDeps()</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="errorDetection" data-file="src/error-detection/ErrorDetectionService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🚨</span> ErrorDetectionService
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Detection</div>
+                                        <div class="component-item">• detectSyntaxErrors(<span class="component-var">code</span>)</div>
+                                        <div class="component-item">• detectSemanticErrors(<span class="component-var">ast</span>)</div>
+                                        <div class="component-item">• suggestFixes(<span class="component-var">error</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Rendering & UI Layer -->
+                    <div class="layer layer-rendering" data-layer="rendering">
+                        <span class="layer-title">Rendering & UI Layer</span>
+                        <div class="components-grid">
+                            <div class="component webview" data-id="diagramRenderer" data-file="src/renderer/DiagramRenderer.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🎨</span> DiagramRenderer
+                                    </div>
+                                    <div class="component-badge">Webview</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Render Methods</div>
+                                        <div class="component-item">• renderClassDiagram(<span class="component-var">data</span>)</div>
+                                        <div class="component-item">• renderSequenceDiagram(<span class="component-var">data</span>)</div>
+                                        <div class="component-item">• renderFlowchart(<span class="component-var">data</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component webview" data-id="mermaidIntegration" data-file="src/webview/MermaidWebviewProvider.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🧜‍♀️</span> MermaidWebviewProvider
+                                    </div>
+                                    <div class="component-badge">Webview</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Mermaid Methods</div>
+                                        <div class="component-item">• showDiagram(<span class="component-var">data</span>, <span class="component-var">title</span>)</div>
+                                        <div class="component-item">• generateMermaidCode(<span class="component-var">diagram</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component webview" data-id="d3Visualization" data-file="src/visualization/D3Visualization.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>📈</span> D3 Visualization
+                                    </div>
+                                    <div class="component-badge">Webview</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">D3 Functions</div>
+                                        <div class="component-item">• createSVG(<span class="component-var">container</span>)</div>
+                                        <div class="component-item">• updateNodes(<span class="component-var">nodeData</span>)</div>
+                                        <div class="component-item">• handleZoom(<span class="component-var">event</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component webview" data-id="reactComponents" data-file="src/webview/components/index.tsx">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>⚛️</span> React Components
+                                    </div>
+                                    <div class="component-badge">Webview</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Components</div>
+                                        <div class="component-item">• DiagramCanvas</div>
+                                        <div class="component-item">• Toolbar</div>
+                                        <div class="component-item">• ZoomControls</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component webview" data-id="themeManager" data-file="src/theme/ThemeManager.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🎨</span> ThemeManager
+                                    </div>
+                                    <div class="component-badge">Webview</div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Theme Methods</div>
+                                        <div class="component-item">• applyTheme(<span class="component-var">themeName</span>)</div>
+                                        <div class="component-item">• getThemeColors()</div>
+                                        <div class="component-item">• syncWithVSCodeTheme()</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Utility & Support Layer -->
+                    <div class="layer layer-utility" data-layer="utility">
+                        <span class="layer-title">Utility & Support Layer</span>
+                        <div class="components-grid">
+                            <div class="component" data-id="fileUtils" data-file="src/utils/FileSystemUtilities.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>📁</span> FileSystemUtilities
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">File Operations</div>
+                                        <div class="component-item">• readFile(<span class="component-var">path</span>): <span class="component-type">Promise&lt;string&gt;</span></div>
+                                        <div class="component-item">• writeFile(<span class="component-var">path</span>, <span class="component-var">content</span>)</div>
+                                        <div class="component-item">• watchFiles(<span class="component-var">pattern</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="logging" data-file="src/logging/LoggingService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>📝</span> LoggingService
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Log Methods</div>
+                                        <div class="component-item">• logInfo(<span class="component-var">message</span>, <span class="component-var">context</span>)</div>
+                                        <div class="component-item">• logError(<span class="component-var">error</span>, <span class="component-var">stack</span>)</div>
+                                        <div class="component-item">• logDebug(<span class="component-var">data</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="i18n" data-file="src/i18n/I18nService.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🌍</span> I18n Service
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">i18n Methods</div>
+                                        <div class="component-item">• translate(<span class="component-var">key</span>, <span class="component-var">params</span>)</div>
+                                        <div class="component-item">• loadLanguage(<span class="component-var">locale</span>)</div>
+                                        <div class="component-item">• detectLanguage()</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="cache" data-file="src/utils/CacheManager.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>💾</span> CacheManager
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Cache Operations</div>
+                                        <div class="component-item">• get(<span class="component-var">key</span>): <span class="component-type">T | undefined</span></div>
+                                        <div class="component-item">• set(<span class="component-var">key</span>, <span class="component-var">value</span>, <span class="component-var">ttl?</span>)</div>
+                                        <div class="component-item">• invalidate(<span class="component-var">pattern</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="component" data-id="helpers" data-file="src/utils/HelperFunctions.ts">
+                                <div class="component-header">
+                                    <div class="component-title">
+                                        <span>🛠️</span> HelperFunctions
+                                    </div>
+                                </div>
+                                <div class="component-content">
+                                    <div class="component-section">
+                                        <div class="component-section-title">Utilities</div>
+                                        <div class="component-item">• formatCode(<span class="component-var">code</span>, <span class="component-var">language</span>)</div>
+                                        <div class="component-item">• validateInput(<span class="component-var">data</span>, <span class="component-var">schema</span>)</div>
+                                        <div class="component-item">• debounce(<span class="component-var">func</span>, <span class="component-var">wait</span>)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tooltip" id="tooltip">
+                <div class="tooltip-title"></div>
+                <div class="tooltip-content"></div>
+            </div>
+            
+            <div class="minimap" id="minimap">
+                <div class="minimap-viewport" id="minimapViewport"></div>
+            </div>
+            
+            <!-- Advanced Controls Panel -->
+            <div id="advancedControls">
+                <div class="control-section">
+                    <h3><span>🎛️</span> Layer Filters</h3>
+                    <div class="filter-group">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-layer="vscode">
+                            <span>VS Code API Layer</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-layer="core">
+                            <span>Core Services Layer</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-layer="analysis">
+                            <span>Analysis Layer</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-layer="rendering">
+                            <span>Rendering Layer</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-layer="utility">
+                            <span>Utility Layer</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h3><span>🔗</span> Connection Filters</h3>
+                    <div class="filter-group">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-connection="control">
+                            <span>Control Flow</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-connection="data">
+                            <span>Data Flow</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-connection="event">
+                            <span>Event Flow</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" checked data-filter-connection="bidirectional">
+                            <span>Bidirectional</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h3><span>📊</span> Complexity Metrics</h3>
+                    <div id="metricsDisplay">
+                        <div class="metric-item">
+                            <span>Total Components:</span>
+                            <span class="metric-value">25</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Total Connections:</span>
+                            <span class="metric-value">18</span>
+                        </div>
+                        <div style="margin-top: 12px; font-size: 12px; color: #8b949e;">
+                            Loading complexity data...
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h3><span>🕐</span> History Navigation</h3>
+                    <div class="history-controls">
+                        <button class="history-btn" id="historyBack" disabled>← Back</button>
+                        <button class="history-btn" id="historyForward" disabled>Forward →</button>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h3><span>🔍</span> Analysis Tools</h3>
+                    <button class="analysis-btn" onclick="if(window.diagramEnhancements) diagramEnhancements.findCircularDependencies()">
+                        Find Circular Dependencies
+                    </button>
+                    <button class="analysis-btn" onclick="if(window.diagramEnhancements) diagramEnhancements.analyzeCriticalPath()">
+                        Show Critical Path
+                    </button>
+                    <button class="analysis-btn" onclick="if(window.diagramEnhancements) diagramEnhancements.generateReport()">
+                        Generate Report
+                    </button>
+                    <button class="analysis-btn" onclick="if(window.diagramEnhancements) diagramEnhancements.plugins.heatmap.enable()">
+                        Enable Heatmap
+                    </button>
+                    <button class="analysis-btn" onclick="if(window.diagramEnhancements) diagramEnhancements.plugins.heatmap.disable()">
+                        Disable Heatmap
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-item">
+            <span>📍</span>
+            <span id="statusPosition">Position: 0, 0</span>
+        </div>
+        <div class="status-item">
+            <span>🔍</span>
+            <span id="statusZoom">Zoom: 100%</span>
+        </div>
+        <div class="status-item">
+            <span>📊</span>
+            <span id="statusMode">Mode: Normal</span>
+        </div>
+        <div class="status-item">
+            <span>⚡</span>
+            <span>CodeSync Diagram v2.0</span>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+    
+    <!-- 스크립트 분리: codesync-diagram-enhanced.js -->
+    <script src="codesync-diagram-enhanced.js"></script>
+</body>
+</html>
+        
