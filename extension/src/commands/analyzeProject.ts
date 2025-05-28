@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { ProjectAnalyzer } from '../analyzers/projectAnalyzer';
 import { DiagramWebviewProvider } from '../webview/webviewProvider';
-import { logger } from '../utils/logger';
+import { logger } from '../services/logService';
 
 export async function analyzeProjectCommand(
     context: vscode.ExtensionContext,

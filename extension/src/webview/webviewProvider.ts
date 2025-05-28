@@ -45,18 +45,29 @@ export class DiagramWebviewProvider {
     }
 
     private handleMessage(message: WebviewMessage) {
+        const data = message.data as Record<string, any>;
         switch (message.command) {
             case 'openFile':
-                this.openFile(message.data.path);
+                this.openFile(data.path as string);
                 break;
             case 'showInfo':
-                vscode.window.showInformationMessage(message.data.message);
+                vscode.window.showInformationMessage(data.message as string);
                 break;
             case 'showError':
-                vscode.window.showErrorMessage(message.data.message);
+                vscode.window.showErrorMessage(data.message as string);
                 break;
             case 'log':
-                console.log('[Webview]', message.data);
+                // Use logger instead of console
+                // console.log('[Webview]', message.data);
+                break;
+            case 'export':
+                this.handleExport(data as { format: string; content: string; isBase64?: boolean });
+                break;
+            case 'getFileContent':
+                this.getFileContent(data.path as string);
+                break;
+            case 'saveFileContent':
+                this.saveFileContent(data.path as string, data.content as string);
                 break;
         }
     }
@@ -73,8 +84,116 @@ export class DiagramWebviewProvider {
         }
     }
 
+    private async getFileContent(filePath: string) {
+        try {
+            const fullPath = path.isAbsolute(filePath) 
+                ? filePath 
+                : path.join(this.projectData.rootPath, filePath);
+            
+            const fileUri = vscode.Uri.file(fullPath);
+            const content = await vscode.workspace.fs.readFile(fileUri);
+            const textContent = Buffer.from(content).toString('utf8');
+            
+            // Limit content size for preview (first 1000 lines)
+            const lines = textContent.split('\n');
+            let previewContent = lines.slice(0, 1000).join('\n');
+            if (lines.length > 1000) {
+                previewContent += '\n\n... (file truncated for preview)';
+            }
+            
+            this.panel?.webview.postMessage({
+                command: 'fileContent',
+                data: { content: previewContent, path: fullPath }
+            });
+        } catch (error) {
+            this.panel?.webview.postMessage({
+                command: 'fileContent',
+                data: { content: null, error: error instanceof Error ? error.message : String(error) }
+            });
+        }
+    }
+
+    private async saveFileContent(filePath: string, content: string) {
+        try {
+            const fullPath = path.isAbsolute(filePath) 
+                ? filePath 
+                : path.join(this.projectData.rootPath, filePath);
+            
+            const fileUri = vscode.Uri.file(fullPath);
+            const encoder = new TextEncoder();
+            await vscode.workspace.fs.writeFile(fileUri, encoder.encode(content));
+            
+            vscode.window.showInformationMessage(`파일이 저장되었습니다: ${path.basename(filePath)}`);
+        } catch (error) {
+            vscode.window.showErrorMessage(`파일 저장 실패: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+
+    private async handleExport(data: { format: string; content: string; isBase64?: boolean }) {
+        try {
+            const diagramDir = path.join(this.projectData.rootPath, 'diagram');
+            
+            // Create diagram directory if it doesn't exist
+            await vscode.workspace.fs.createDirectory(vscode.Uri.file(diagramDir));
+            
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            let fileName: string;
+            let content: string | Buffer;
+            
+            switch (data.format) {
+                case 'png':
+                    fileName = `architecture-${timestamp}.png`;
+                    // Handle base64 PNG data
+                    if (data.isBase64) {
+                        content = Buffer.from(data.content, 'base64');
+                    } else {
+                        // Fallback to saving as HTML
+                        fileName = `architecture-${timestamp}.html`;
+                        content = data.content;
+                        vscode.window.showInformationMessage(
+                            'PNG export fallback: Saved as HTML.'
+                        );
+                    }
+                    break;
+                    
+                case 'json':
+                    fileName = `architecture-${timestamp}.json`;
+                    content = data.content;
+                    break;
+                    
+                case 'html':
+                    fileName = `architecture-${timestamp}.html`;
+                    content = data.content;
+                    break;
+                    
+                default:
+                    throw new Error(`Unknown export format: ${data.format}`);
+            }
+            
+            const filePath = path.join(diagramDir, fileName);
+            const buffer = typeof content === 'string' 
+                ? Buffer.from(content, 'utf-8')
+                : content;
+            await vscode.workspace.fs.writeFile(
+                vscode.Uri.file(filePath),
+                buffer
+            );
+            
+            vscode.window.showInformationMessage(
+                `Diagram exported to: ${path.relative(this.projectData.rootPath, filePath)}`
+            );
+            
+            // Open the exported file
+            const doc = await vscode.workspace.openTextDocument(filePath);
+            await vscode.window.showTextDocument(doc, { preview: false });
+            
+        } catch (error) {
+            vscode.window.showErrorMessage(`Export failed: ${error}`);
+        }
+    }
+
     private transformProjectData() {
-        const layers: Record<string, any[]> = {
+        const layers: Record<string, Array<{ id: string; type: string; label: string; layer: string; dependencies: string[] }>> = {
             vscode: [],
             core: [],
             analysis: [],
@@ -87,14 +206,20 @@ export class DiagramWebviewProvider {
             const layer = this.determineLayer(file.path);
             const component = {
                 id: file.path.replace(/[^a-zA-Z0-9]/g, '_'),
-                file: file.path,
-                name: file.name,
-                layer: layer,
                 type: this.getComponentType(file),
-                functions: [],
-                variables: [],
-                classes: [],
-                fullPath: file.fullPath
+                label: file.name,
+                name: file.name,
+                file: file.path,
+                fullPath: file.fullPath,
+                layer: layer,
+                dependencies: [],
+                isUsed: file.isUsed,
+                referenceCount: file.referenceCount || 0,
+                description: file.description || '',
+                comments: file.comments || [],
+                functions: file.functions || [],
+                variables: file.variables || [],
+                classes: file.classes || []
             };
             
             layers[layer].push(component);
@@ -104,7 +229,7 @@ export class DiagramWebviewProvider {
         // Transform dependencies into connections
         const connections = this.projectData.dependencies.map(dep => ({
             from: dep.from.replace(/[^a-zA-Z0-9]/g, '_'),
-            to: dep.to.replace(/[^a-zA-Z0-9]/g, '_'),
+            to: dep.to.startsWith('[DB:') ? dep.to : dep.to.replace(/[^a-zA-Z0-9]/g, '_'),
             type: dep.type,
             label: dep.type
         }));
@@ -113,6 +238,7 @@ export class DiagramWebviewProvider {
             layers,
             components,
             connections,
+            dependencies: this.projectData.dependencies, // Include raw dependencies for database processing
             stats: this.projectData.stats,
             fileTree: this.projectData.fileTree || [] // Include the file tree
         };
@@ -134,11 +260,11 @@ export class DiagramWebviewProvider {
         }
     }
 
-    private getComponentType(file: any): string {
-        if (file.name.includes('Service')) return 'service';
-        if (file.name.includes('Provider')) return 'provider';
-        if (file.name.includes('View')) return 'webview';
-        if (file.extension === '.ts' || file.extension === '.js') return 'component';
+    private getComponentType(file: { name: string; extension: string }): string {
+        if (file.name.includes('Service')) {return 'service';}
+        if (file.name.includes('Provider')) {return 'provider';}
+        if (file.name.includes('View')) {return 'webview';}
+        if (file.extension === '.ts' || file.extension === '.js') {return 'component';}
         return 'file';
     }
 
@@ -188,6 +314,12 @@ export class DiagramWebviewProvider {
             </div>
             
             <div class="control-group">
+                <button class="control-btn" id="umlToggle" title="Toggle UML View">
+                    <span>📐</span> UML
+                </button>
+                <button class="control-btn" id="resetViewBtn" title="Reset View">
+                    <span>🔄</span> Reset View
+                </button>
                 <button class="control-btn" id="exportBtn" title="Export Diagram">
                     <span>💾</span> Export
                 </button>
@@ -232,6 +364,56 @@ export class DiagramWebviewProvider {
             
             <div class="sidebar-section">
                 <div class="sidebar-title">
+                    <span>🎨</span> Connection Types
+                </div>
+                <div class="sidebar-content connection-legend">
+                    <div class="legend-item">
+                        <svg width="40" height="2" style="vertical-align: middle; margin-right: 8px;">
+                            <line x1="0" y1="1" x2="40" y2="1" stroke="#58a6ff" stroke-width="2"/>
+                        </svg>
+                        <span>Import</span>
+                    </div>
+                    <div class="legend-item">
+                        <svg width="40" height="2" style="vertical-align: middle; margin-right: 8px;">
+                            <line x1="0" y1="1" x2="40" y2="1" stroke="#3fb950" stroke-width="2" stroke-dasharray="5,5"/>
+                        </svg>
+                        <span>Export</span>
+                    </div>
+                    <div class="legend-item">
+                        <svg width="40" height="2" style="vertical-align: middle; margin-right: 8px;">
+                            <line x1="0" y1="1" x2="40" y2="1" stroke="#f78166" stroke-width="3"/>
+                        </svg>
+                        <span>Inheritance</span>
+                    </div>
+                    <div class="legend-item">
+                        <svg width="40" height="2" style="vertical-align: middle; margin-right: 8px;">
+                            <line x1="0" y1="1" x2="40" y2="1" stroke="#e74c3c" stroke-width="2.5" stroke-dasharray="10,5"/>
+                        </svg>
+                        <span>Database</span>
+                    </div>
+                    <div class="legend-item">
+                        <svg width="40" height="2" style="vertical-align: middle; margin-right: 8px;">
+                            <line x1="0" y1="1" x2="40" y2="1" stroke="#bc6bd6" stroke-width="2" stroke-dasharray="3,3"/>
+                        </svg>
+                        <span>Include</span>
+                    </div>
+                    <div class="legend-item">
+                        <svg width="40" height="2" style="vertical-align: middle; margin-right: 8px;">
+                            <line x1="0" y1="1" x2="40" y2="1" stroke="#f1fa8c" stroke-width="2" stroke-dasharray="8,4"/>
+                        </svg>
+                        <span>Script</span>
+                    </div>
+                    <div class="legend-item">
+                        <svg width="40" height="2" style="vertical-align: middle; margin-right: 8px;">
+                            <line x1="0" y1="1" x2="40" y2="1" stroke="#ff79c6" stroke-width="2" stroke-dasharray="6,6"/>
+                        </svg>
+                        <span>Stylesheet</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">
                     <span>⌨️</span> Keyboard Shortcuts
                 </div>
                 <div class="sidebar-content">
@@ -264,6 +446,22 @@ export class DiagramWebviewProvider {
             <div class="tooltip" id="tooltip">
                 <div class="tooltip-title"></div>
                 <div class="tooltip-content"></div>
+            </div>
+            
+            <div class="file-preview" id="filePreview">
+                <div class="file-preview-header">
+                    <span class="file-preview-title"></span>
+                    <div class="file-preview-actions">
+                        <button class="file-preview-btn" id="editFileBtn" title="Edit">✏️</button>
+                        <button class="file-preview-btn" id="saveFileBtn" style="display: none;" title="Save">💾</button>
+                        <button class="file-preview-btn" id="cancelEditBtn" style="display: none;" title="Cancel">❌</button>
+                        <button class="file-preview-close" id="closePreview" title="Close">✖</button>
+                    </div>
+                </div>
+                <div class="file-preview-content">
+                    <pre id="filePreviewPre"><code id="filePreviewCode"></code></pre>
+                    <textarea id="fileEditTextarea" class="file-edit-textarea" style="display: none;"></textarea>
+                </div>
             </div>
             
             <div class="minimap" id="minimap">
@@ -315,6 +513,39 @@ export class DiagramWebviewProvider {
                     </button>
                     <button class="analysis-btn" id="generateReport">
                         Generate Report
+                    </button>
+                </div>
+                
+                <div class="control-section">
+                    <h3><span>📌</span> Selected Component</h3>
+                    <div id="selectedComponentInfo">
+                        <p class="no-selection">No component selected</p>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h3><span>🔗</span> Connections</h3>
+                    <div id="connectionsList">
+                        <p class="no-connections">Select a component to view connections</p>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h3><span>⚙️</span> Actions</h3>
+                    <button class="analysis-btn" id="clearSelection">
+                        Clear Selection
+                    </button>
+                    <button class="analysis-btn" id="isolateComponent">
+                        Isolate Component
+                    </button>
+                    <button class="analysis-btn" id="resetIsolation">
+                        Reset Isolation
+                    </button>
+                    <button class="analysis-btn" id="showDependencyTree">
+                        Show Dependency Tree
+                    </button>
+                    <button class="analysis-btn" id="resolveDependencies">
+                        Resolve Dependencies
                     </button>
                 </div>
             </div>

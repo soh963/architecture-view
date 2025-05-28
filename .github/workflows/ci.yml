@@ -1,0 +1,85 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: extension/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./extension
+      run: npm ci
+    
+    - name: Run linting
+      working-directory: ./extension
+      run: npm run lint
+      continue-on-error: true
+    
+    - name: Run type checking
+      working-directory: ./extension
+      run: npx tsc --noEmit
+    
+    - name: Run tests
+      working-directory: ./extension
+      run: npm test
+      env:
+        CI: true
+    
+    - name: Build extension
+      working-directory: ./extension
+      run: npm run compile
+    
+    - name: Package extension
+      if: matrix.node-version == '20.x' && github.ref == 'refs/heads/main'
+      working-directory: ./extension
+      run: |
+        npm install -g @vscode/vsce
+        vsce package --allow-missing-repository
+    
+    - name: Upload VSIX artifact
+      if: matrix.node-version == '20.x' && github.ref == 'refs/heads/main'
+      uses: actions/upload-artifact@v3
+      with:
+        name: codesync-diagram-vsix
+        path: extension/*.vsix
+        retention-days: 7
+    
+    - name: Create Release
+      if: matrix.node-version == '20.x' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release]')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: extension/*.vsix
+        tag_name: v${{ github.run_number }}
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  auto-merge-dependabot:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+    - name: Auto-merge Dependabot PRs
+      uses: ahmadnassri/action-dependabot-auto-merge@v2
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        target: minor

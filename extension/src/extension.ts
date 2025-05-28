@@ -1,13 +1,11 @@
 import * as vscode from 'vscode';
 import { analyzeProjectCommand } from './commands/analyzeProject';
-import { logger } from './utils/logger';
+import { logger } from './services/logService';
 
 export function activate(context: vscode.ExtensionContext) {
-    logger.initialize(context).then(() => {
-        logger.info('CodeSync Diagram extension activated', {
-            version: context.extension.packageJSON.version,
-            workspaceFolder: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
-        });
+    logger.info('CodeSync Diagram extension activated', {
+        version: context.extension.packageJSON.version,
+        workspaceFolder: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
     });
 
     const disposable = vscode.commands.registerCommand(
@@ -31,12 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    context.subscriptions.push(
-        vscode.commands.registerCommand('codesync.clearLogs', async () => {
-            await logger.clearLogs();
-            vscode.window.showInformationMessage('로그가 삭제되었습니다.');
-        })
-    );
+    // Clear logs command removed - not implemented in LogService
 }
 
 export function deactivate() {

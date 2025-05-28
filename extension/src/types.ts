@@ -8,12 +8,19 @@ export interface FileInfo {
     lastModified: Date;
     isDirectory?: boolean;
     children?: FileInfo[];
+    comments?: string[]; // 파일의 주요 주석들
+    isUsed?: boolean; // 다른 파일에서 참조되는지 여부
+    description?: string; // 파일의 한글 설명
+    referenceCount?: number; // 파일이 참조되는 횟수 (중요도)
+    functions?: string[]; // 파일에 정의된 함수들
+    variables?: string[]; // 파일에 정의된 변수들
+    classes?: string[]; // 파일에 정의된 클래스들
 }
 
 export interface DependencyInfo {
     from: string;
     to: string;
-    type: 'import' | 'export' | 'inheritance';
+    type: 'import' | 'export' | 'inheritance' | 'include' | 'script' | 'stylesheet' | 'database';
 }
 
 export interface Layer {
@@ -44,5 +51,5 @@ export interface ProjectStructure {
 
 export interface WebviewMessage {
     command: string;
-    data?: any;
+    data?: unknown;
 }

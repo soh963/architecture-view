@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(mcp:*)",
+      "mcp__toolbox__search_servers",
+      "Bash(claude mcp add:*)",
+      "Bash(claude mcp:*)",
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run compile:*)",
+      "Bash(npx vsce package)",
+      "Bash(npx vsce package:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(rm:*)",
+      "Bash(npm run package:*)",
+      "Bash(grep:*)",
+      "Bash(npm test)",
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(rg:*)",
+      "Bash(vsce package:*)",
+      "mcp__filesystem__search_files",
+      "mcp__filesystem__read_file",
+      "Bash(chmod:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run lint)",
+      "Bash(npm version:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run build-vsix:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run:*)"
+    ],
+    "deny": []
+  }
+}

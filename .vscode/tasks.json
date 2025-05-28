@@ -1,0 +1,81 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Tests",
+            "type": "npm",
+            "script": "test",
+            "path": "extension/",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": "$tsc",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Watch & Test",
+            "type": "npm",
+            "script": "build:watch",
+            "path": "extension/",
+            "isBackground": true,
+            "problemMatcher": "$tsc-watch",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "CI Build",
+            "type": "npm",
+            "script": "ci",
+            "path": "extension/",
+            "group": "build",
+            "problemMatcher": ["$tsc", "$eslint-stylish"],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Lint Fix",
+            "type": "npm",
+            "script": "lint:fix",
+            "path": "extension/",
+            "problemMatcher": "$eslint-stylish",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Build Production",
+            "type": "npm",
+            "script": "build:prod",
+            "path": "extension/",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$tsc", "$eslint-stylish"],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            },
+            "dependsOn": []
+        }
+    ]
+}

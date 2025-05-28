@@ -1,0 +1,101 @@
+{
+  "timestamp": "2025-05-27T12:15:26.501Z",
+  "statistics": {
+    "totalFiles": 25,
+    "totalConnections": 29,
+    "layers": [
+      {
+        "name": "vscode",
+        "components": 22
+      },
+      {
+        "name": "core",
+        "components": 0
+      },
+      {
+        "name": "analysis",
+        "components": 0
+      },
+      {
+        "name": "rendering",
+        "components": 1
+      },
+      {
+        "name": "utility",
+        "components": 2
+      }
+    ]
+  },
+  "complexity": {
+    "coupling": 29,
+    "cohesion": 0,
+    "fanIn": {
+      "diagram.css": 0,
+      "diagram.js": 0,
+      "watch-build.js": 0,
+      "projectAnalyzer.ts": 1,
+      "analyzeProject.ts": 1,
+      "logService.ts": 3,
+      "webviewProvider.ts": 1,
+      "extension.ts": 0,
+      "types.ts": 2,
+      "dataService.js": 2,
+      "helper.js": 2,
+      "Dashboard.js": 0,
+      "index.js": 0,
+      "config.json": 0,
+      "manual-test.md": 0,
+      "runTests.js": 0,
+      ".eslintrc.json": 0,
+      "package-lock.json": 0,
+      "package.json": 1,
+      "README.md": 0,
+      "tsconfig.json": 0,
+      "webpack.config.js": 0,
+      "DEVELOPMENT_GUIDE.md": 0,
+      "IMPLEMENTATION_LOG.md": 0,
+      "PRD.md": 0
+    },
+    "fanOut": {
+      "diagram.css": 0,
+      "diagram.js": 0,
+      "watch-build.js": 3,
+      "projectAnalyzer.ts": 5,
+      "analyzeProject.ts": 4,
+      "logService.ts": 3,
+      "webviewProvider.ts": 3,
+      "extension.ts": 3,
+      "types.ts": 0,
+      "dataService.js": 1,
+      "helper.js": 0,
+      "Dashboard.js": 1,
+      "index.js": 2,
+      "config.json": 0,
+      "manual-test.md": 0,
+      "runTests.js": 3,
+      ".eslintrc.json": 0,
+      "package-lock.json": 0,
+      "package.json": 0,
+      "README.md": 0,
+      "tsconfig.json": 0,
+      "webpack.config.js": 1,
+      "DEVELOPMENT_GUIDE.md": 0,
+      "IMPLEMENTATION_LOG.md": 0,
+      "PRD.md": 0
+    },
+    "averageCoupling": 1.16
+  },
+  "recommendations": [
+    "Component \"diagram.css\" is isolated. Consider removing or connecting.",
+    "Component \"diagram.js\" is isolated. Consider removing or connecting.",
+    "Component \"config.json\" is isolated. Consider removing or connecting.",
+    "Component \"manual-test.md\" is isolated. Consider removing or connecting.",
+    "Component \".eslintrc.json\" is isolated. Consider removing or connecting.",
+    "Component \"package-lock.json\" is isolated. Consider removing or connecting.",
+    "Component \"README.md\" is isolated. Consider removing or connecting.",
+    "Component \"tsconfig.json\" is isolated. Consider removing or connecting.",
+    "Component \"DEVELOPMENT_GUIDE.md\" is isolated. Consider removing or connecting.",
+    "Component \"IMPLEMENTATION_LOG.md\" is isolated. Consider removing or connecting.",
+    "Component \"PRD.md\" is isolated. Consider removing or connecting."
+  ]
+}
